@@ -29,13 +29,11 @@ class MapVC: UIViewController {
     }
     
     func addDoubleTap(){
-        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(dropPin))
+        let doubleTap = UITapGestureRecognizer(target: self, action: #selector(dropPin(sender: )))
         doubleTap.numberOfTapsRequired = 2
-        doubleTap.delegate = self as! UIGestureRecognizerDelegate
+//        doubleTap.delegate = self
         mapView.addGestureRecognizer(doubleTap)
     }
-    
-    
     
 
     @IBAction func centerMapBtnPressed(_ sender: Any) {
@@ -55,6 +53,19 @@ extension MapVC: MKMapViewDelegate {
 }
 
 extension MapVC: CLLocationManagerDelegate{
+    
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        if annotation is MKUserLocation{
+            return nil
+        }
+        
+        var pinAnootaion = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "droppablePin")
+        pinAnootaion.pinTintColor = #colorLiteral(red: 1, green: 0.7575573896, blue: 0.1878320102, alpha: 1)
+        pinAnootaion.animatesDrop = true
+        
+        return pinAnootaion
+    }
+    
     func configureLocationServices(){
         if authorizationStats == .notDetermined{
             locationManager.requestAlwaysAuthorization()
@@ -65,9 +76,26 @@ extension MapVC: CLLocationManagerDelegate{
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         centerMapOnUserLocation()
     }
-    @objc func dropPin(){
+    
+    @objc func dropPin(sender: UITapGestureRecognizer){
         //drop tee pin in the map
-        print("pin was dropped")
+        removePin()
+        
+        let touchPoint = sender.location(in: mapView)
+        let touchCoordinates = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+        
+        let annotation = DroppablePin(coordinate: touchCoordinates, identifier: "droppablePin")
+        mapView.addAnnotation(annotation)
+        
+        let coordinatesRegion = MKCoordinateRegion(center: touchCoordinates, latitudinalMeters: regionRadius * 2.0, longitudinalMeters: regionRadius * 2.0)
+    
+        mapView.setRegion(coordinatesRegion, animated: true)
+    }
+    
+    func removePin(){
+        for annotation in mapView.annotations{
+            mapView.removeAnnotation(annotation)
+        }
     }
 }
 
