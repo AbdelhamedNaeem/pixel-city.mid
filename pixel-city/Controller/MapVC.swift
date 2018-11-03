@@ -155,11 +155,15 @@ extension MapVC: CLLocationManagerDelegate{
         addSpinner()
         addProgressLabel()
         
+
         let touchPoint = sender.location(in: mapView)
         let touchCoordinates = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         
         let annotation = DroppablePin(coordinate: touchCoordinates, identifier: "droppablePin")
         mapView.addAnnotation(annotation)
+        
+        print(flickerUrl(forApiKey: apikey, withAnnotation: annotation, numberOfPhotos: 40))
+
         
         let coordinatesRegion = MKCoordinateRegionMakeWithDistance(touchCoordinates, regionRadius * 2.0, regionRadius * 2.0)
     
@@ -171,6 +175,7 @@ extension MapVC: CLLocationManagerDelegate{
             mapView.removeAnnotation(annotation)
         }
     }
+    
 }
 
 extension MapVC: UICollectionViewDelegate,UICollectionViewDataSource{
