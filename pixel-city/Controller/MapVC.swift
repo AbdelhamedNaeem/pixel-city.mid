@@ -175,7 +175,7 @@ extension MapVC: CLLocationManagerDelegate{
         let annotation = DroppablePin(coordinate: touchCoordinates, identifier: "droppablePin")
         mapView.addAnnotation(annotation)
         
-        print(flickerUrl(forApiKey: apikey, withAnnotation: annotation, numberOfPhotos: 40))
+        print(flickerUrl(forApiKey: apikey, withAnnotation: annotation, numberOfPhotos: 30))
 
         
         let coordinatesRegion = MKCoordinateRegionMakeWithDistance(touchCoordinates, regionRadius * 2.0, regionRadius * 2.0)
@@ -205,7 +205,7 @@ extension MapVC: CLLocationManagerDelegate{
     
     func retrieveURLs(forAnnotation annotation: DroppablePin, handler: @escaping (_ stats: Bool) -> ()) {
         
-        Alamofire.request(flickerUrl(forApiKey: apikey, withAnnotation: annotation, numberOfPhotos: 40)).responseJSON { (response) in
+        Alamofire.request(flickerUrl(forApiKey: apikey, withAnnotation: annotation, numberOfPhotos: 30)).responseJSON { (response) in
             guard let json = response.result.value as? Dictionary<String, AnyObject> else{ return }
             let photoDic = json["photos"] as? Dictionary<String, AnyObject>
             let photosDicArray = photoDic!["photo"] as! [Dictionary<String, AnyObject>]
@@ -225,7 +225,7 @@ extension MapVC: CLLocationManagerDelegate{
             Alamofire.request(url).responseImage { (response) in
                 guard let image = response.result.value else {return}
                 self.imageArray.append(image)
-                self.progressLabel?.text = "\(self.imageArray.count)/40 IMAGES DOWNLOADED"
+                self.progressLabel?.text = "\(self.imageArray.count)/30 IMAGES DOWNLOADED"
                 
                 if self.imageArray.count == self.imageUrlArray.count{
                     handler(true)
@@ -264,6 +264,13 @@ extension MapVC: UICollectionViewDelegate,UICollectionViewDataSource{
         return cell
     }
     
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let popVC = storyboard?.instantiateViewController(withIdentifier: "PopVC") as? PopVC else {return}
+        
+        popVC.initData(forImage: imageArray[indexPath.row])
+        present(popVC, animated: true, completion: nil)
+        
+    }
     
 }
 
