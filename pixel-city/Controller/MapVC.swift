@@ -33,6 +33,7 @@ class MapVC: UIViewController {
     var collectionView: UICollectionView?
     
     var imageUrlArray = [String]()
+    var imageArray = [UIImage]()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,6 +76,7 @@ class MapVC: UIViewController {
         UIView.animate(withDuration: 0.3) {
             self.view.layoutIfNeeded()
         }
+        cancelAllSessions()
     }
     
     func addSpinner() {
@@ -95,10 +97,10 @@ class MapVC: UIViewController {
     func  addProgressLabel() {
         progressLabel = UILabel()
         progressLabel?.frame = CGRect(x: (screenSize.width / 2) - 100, y: 175, width: 200, height:  40)
-        progressLabel!.font = UIFont(name: "Avenir Next", size: 18)
+        progressLabel!.font = UIFont(name: "Avenir Next", size: 14)
         progressLabel?.textColor = #colorLiteral(red: 0.2549019754, green: 0.2745098174, blue: 0.3019607961, alpha: 1)
         progressLabel?.textAlignment = .center
-        progressLabel?.text = "4/10 photos loading"
+        
         collectionView?.addSubview(progressLabel!)
     }
     
@@ -154,6 +156,8 @@ extension MapVC: CLLocationManagerDelegate{
         removePin()
         removeSpinner()
         removrProgressLabel()
+        cancelAllSessions()
+        
         animateViewUp()
         addSwipe()
         addSpinner()
@@ -173,8 +177,17 @@ extension MapVC: CLLocationManagerDelegate{
     
         mapView.setRegion(coordinatesRegion, animated: true)
         
-        retrieveURLs(forAnnotation: annotation) { (true) in
-            print(self.imageUrlArray)
+        retrieveURLs(forAnnotation: annotation) { (finished) in
+            if finished{
+                self.retrieveImages(handler: { (finished) in
+                    if finished{
+                        self.removeSpinner()
+                        self.removrProgressLabel()
+                        //reload collectionView
+                    }
+                })
+            }
+
         }
     }
     
@@ -183,6 +196,8 @@ extension MapVC: CLLocationManagerDelegate{
             mapView.removeAnnotation(annotation)
         }
     }
+    
+    
     func retrieveURLs(forAnnotation annotation: DroppablePin, handler: @escaping (_ stats: Bool) -> ()) {
         imageUrlArray = []
         
@@ -200,8 +215,31 @@ extension MapVC: CLLocationManagerDelegate{
             handler(true)
         }
     }
+    func retrieveImages(handler: @escaping (_ status: Bool) -> ()) {
+        imageArray = []
+        
+        for url in imageUrlArray{
+            Alamofire.request(url).responseImage { (response) in
+                guard let image = response.result.value else {return}
+                self.imageArray.append(image)
+                self.progressLabel?.text = "\(self.imageArray.count)/40 IMAGES DOWNLOADED"
+                
+                if self.imageArray.count == self.imageUrlArray.count{
+                    handler(true)
+                }
+            }
+        }
+    }
     
+    func cancelAllSessions() {
+        Alamofire.SessionManager.default.session.getTasksWithCompletionHandler { (sessionDataTask, uploadData, downloadData) in
+            sessionDataTask.forEach({ $0.cancel() })
+            downloadData.forEach({ $0.cancel() })
+        }
+    }
 }
+
+
 
 extension MapVC: UICollectionViewDelegate,UICollectionViewDataSource{
     
